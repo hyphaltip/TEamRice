@@ -7,12 +7,11 @@ my $genomeFasta;
 my $fq_1;
 my $fq_2;
 my $target;
-my $len_cutoff;
+my $len_cutoff = 10;
 GetOptions(
     '1|fq_1:s'        => \$fq_1,
     '2|fq_2:s'        => \$fq_2,
     'g|genomeFasta:s' => \$genomeFasta,
-    't|target:s'      => \$target,
     'l|len_cutoff:i'  => \$len_cutoff,
     'h|help'          => \&getHelp,
 );
@@ -23,11 +22,6 @@ if ( !defined $genomeFasta ) {
 }
 elsif ( !defined $fq_1 or !defined $fq_2 ) {
     print "\n\nPlease provide 2 paired fastq files\n";
-    &getHelp();
-}
-if ( !defined $target ) {
-    print
-"\n\nPlease provide a chromosome (-t) you want to seach for mping insertions\n";
     &getHelp();
 }
 unless ( -e $genomeFasta ) {
@@ -42,18 +36,26 @@ unless ( -e $fq_2 ) {
     print "$fq_2 does not exist. Check file name.\n";
     &getHelp();
 }
-
+if ( !defined $target ) {
+	open FASTA, $genomeFasta;
+	while (my $line = <FASTA>){
+		chomp $line;
+		if ($line =~ />(\S+)/){
+			$target = $1;
+			last;
+		}
+	}
+}
 sub getHelp () {
     print "
 usage:
-./find_mping_insertionSites.pl [-g chromosome_genome_fasta][-t chromosome_to_search][-1 fastq_file_1] [-2 fastq_file_2][-h] 
+./find_mping_insertionSites.pl [-g chromosome_genome_fasta][-1 fastq_file_1] [-2 fastq_file_2][-h] 
 
 options:
 -g STR          single chromosome genome fasta file path [no default]
 -1 STR          fastq file 1 (.fq or .fastq)  [no default]
 -2 STR          fastq file 2 (.fq or .fastq)  [no default]
--t STR		chromosome name as it appears in genome fasta to be searched for mping insertions
--l INT		len cutoff for the mping trimmed reads to be aligned [19] 
+-l INT		len cutoff for the mping trimmed reads to be aligned [10] 
 -h              this message
 ";
 
@@ -64,8 +66,8 @@ my $genome_path = File::Spec->rel2abs($genomeFasta);
 my $current     = File::Spec->curdir();
 my $current_dir = File::Spec->rel2abs($current);
 
-`bowtie-build -f $genome_path bowtie_build_index`
-  if !-e "bowtie_build_index.1.ebwt";
+`bowtie-build -f $genome_path $target.bowtie_build_index`
+  if !-e "$target.bowtie_build_index.1.ebwt";
 my @fq;
 my @fa;
 foreach my $fq ( $fq_1, $fq_2 ) {
@@ -74,7 +76,6 @@ foreach my $fq ( $fq_1, $fq_2 ) {
     if ( $fq =~ /(\/.+\/)?(\S+)\.(fq|fastq)$/ ) {
         my $fa = "$2.fa";
 
-        #print "fa: $fa\n";
         push @fa, $fa;
         if ( !-e $fa ) {
             open INFQ,  $fq_path or die $1;
@@ -125,6 +126,11 @@ for ( my $i = 0 ; $i < 2 ; $i++ ) {
     `blat -minScore=10 -tileSize=7 mping.fa $fa $fa.blatout`
       if !-e "$fa.blatout";
     my $file_num = $i + 1;
+    $fa =~ /(\S+)\.fa/;	
+    my $mpingContaining_fq = "$1.mpingContainingReads.fq";
+    if (-e $mpingContaining_fq){
+	$fq = $mpingContaining_fq;
+    }
 `perl ~/bin/get_fq_of_mpingTrimmed_mpingMatching_reads.pl $fa.blatout $fq $len_cutoff > mpingFlankingReads_$file_num.fq`;
     push @flanking_fq, "mpingFlankingReads_$file_num.fq";
 }
@@ -133,8 +139,8 @@ for ( my $i = 0 ; $i < 2 ; $i++ ) {
 `~/bin/clean_pairs_memory.pl -1 $flanking_fq[0] -2 $flanking_fq[1] > mpingFlanking_unPaired.fq`;
 
 #align mpingFlanking reads to genome fasta
-`bowtie --best -q bowtie_build_index -1 $flanking_fq[0].matched -2 $flanking_fq[1].matched > bowtie.out`;
-`bowtie --best -q bowtie_build_index mpingFlanking_unPaired.fq > bowtie_unPaired.out`;
+`bowtie --best -q $target.bowtie_build_index -1 $flanking_fq[0].matched -2 $flanking_fq[1].matched > bowtie.out`;
+`bowtie --best -q $target.bowtie_build_index mpingFlanking_unPaired.fq > bowtie_unPaired.out`;
 
 #create an index of genome fasta
 `samtools faidx $genome_path`;

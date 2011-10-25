@@ -62,7 +62,7 @@ while ( my $line = <INBLAT> ) {
 }
 
 open INFQ, $fq_file_1 or die $!;
-my ( $filename, $directories, $suffix ) = fileparse( $fq_file_1, qr/\.[^.]*/ );
+my ( $filename, $directories, $suffix ) = fileparse( $blat_file, qr/\.[^.]*/ );
 open OUTFQ,     ">$filename.mpingContainingReads$suffix";
 open OUTMPING5, ">$filename.mping_five_prime.fa";
 open OUTMPING3, ">$filename.mping_three_prime.fa";
