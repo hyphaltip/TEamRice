@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 use File::Spec;
-
+my $collapse = 1;
 my $dir = shift;
 my $dir_path = File::Spec->rel2abs($dir);
 my $current     = File::Spec->curdir();
@@ -46,6 +46,18 @@ foreach my $file ( readdir(DIR) ) {
 		}else {
 			warn "it is unclear if this is a first or second pair based on flag: $name flag:$flag\n";
 		}
+	}
+	if ($collapse){
+		my $unpaired = "$dir_path/$filebase.fq";
+		my $unpaired_c = "$dir_path/$filebase.collapsed.fq";
+		my $outfq_1 = "$dir_path/$filebase"."_1.fq";
+		my $outfq_1_c = "$dir_path/$filebase"."_1.collapsed.fq";
+		my $outfq_2 = "$dir_path/$filebase"."_2.fq";
+		my $outfq_2_c = "$dir_path/$filebase"."_2.collapsed.fq";
+
+		`fastx_collapser -i $unpaired -o $unpaired_c`; ##if -e $unpaired and -s $unpaired;
+		`fastx_collapser -i $outfq_1_c -o $outfq_1_c`; 
+		`fastx_collapser -i $outfq_2 -o $outfq_2_c`;
 	}
 }
 
