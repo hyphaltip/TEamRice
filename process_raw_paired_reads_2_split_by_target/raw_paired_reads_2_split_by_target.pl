@@ -70,8 +70,6 @@ unless ( -e $genomeFasta ) {
 my $genome_path = File::Spec->rel2abs($genomeFasta);
 my $current     = File::Spec->curdir();
 my $current_dir = File::Spec->rel2abs($current);
-#my $start_host = `hostname`;
-#$start_host =~ s/\s//g;
 
 my $bwa_index = "bwa index -a bwtsw $genome_path";
 unless ( -e "$genome_path.rsa" ) {
@@ -89,18 +87,13 @@ my $dir_path = File::Spec->rel2abs($dir);
 if ($split){
 	mkdir "$current_dir/split_by_number_fq", 0777 unless -d "$current_dir/split_by_number_fq";    
 	opendir( DIR, $dir_path ) || die "$!";
-	#open SH, ">$current_dir/0_split_large_file.sh";
-	#print SH "#!/bin/bash\n\n";
 	foreach my $file ( readdir(DIR) ) {
 	    my ( $volume, $directories, $filename ) = File::Spec->splitpath($file);
 	    next unless ( $filename =~ /((\S+)($mate_1_id|$mate_2_id))\.(fastq|fq)$/ );
 	    my ( $filename_base, $sampleName, $pairID, $suffix ) = ( $1, $2, $3, $4 );
 	    `~/bin/fastq_split.pl -s 10000000 -o split_by_number_fq/ $dir_path/$file`;
-	    #print  "~/bin/fastq_split.pl -s 10000000 -o split_by_number_fq/ $file\n";
 	}
-	#close SH;
 }
-#`rm $dir_path/toMove.sh` if -e "$dir_path/toMove.sh";
 if ($split){
 	$dir_path = "$current_dir/split_by_number_fq";
 }
