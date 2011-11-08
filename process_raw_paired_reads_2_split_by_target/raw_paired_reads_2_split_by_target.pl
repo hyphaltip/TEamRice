@@ -135,11 +135,13 @@ foreach my $sample ( sort keys %files ) {
 	if ($filter_trim){
 		push @trim_filter, 
 "fastq_quality_trimmer -Q$Q -l $minLength -t $minQuality -i $dir_path/$file.$fq_ext |fastq_quality_filter -Q$Q -q $minQuality -p $minPercent -v -o \$tmp_dir/$file.trimmed.filtered.fq";
-	}else{
-		print OUTFILE "ln -s $dir_path/$file.$fq_ext \$tmp_dir/.\n"
-	}
-        push @aln,
+        	push @aln,
 "bwa aln -t 10 $genome_path \$tmp_dir/$file$desc$ext.matched > \$tmp_dir/$file$desc.matched.sai";
+	}else{
+		print OUTFILE "ln -s $dir_path/$file.$fq_ext \$tmp_dir/.\n";
+        	push @aln,
+"bwa aln -t 10 -q 10 $genome_path \$tmp_dir/$file$desc$ext.matched > \$tmp_dir/$file$desc.matched.sai";
+	}
 
     }
 
@@ -200,6 +202,8 @@ foreach my $sample ( sort keys %files ) {
     foreach my $line (@sam2bam) {
         print OUTFILE "$line\n\n";
     }
+    print OUTFILE "mkdir -p $current_dir/sam_for_all_reads\n";
+    print OUTFILE "cp \$tmp_dir/*sam $current_dir/sam_for_all_reads\n";
     print OUTFILE "mkdir -p $current_dir/fq_split_by_chromosome\n";
     print OUTFILE "mkdir -p $current_dir/sam_split_by_chromosome\n";
     print OUTFILE "mkdir -p $current_dir/bam_split_by_chromosome\n";
