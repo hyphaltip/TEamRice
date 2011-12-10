@@ -1,0 +1,1 @@
+/home_stajichlab/robb/bin/get_fq_of_te_trimmed_te_matching_reads.pl

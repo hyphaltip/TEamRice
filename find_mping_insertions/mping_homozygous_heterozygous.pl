@@ -1,0 +1,1 @@
+/home_stajichlab/robb/bin/mping_homozygous_heterozygous.pl
