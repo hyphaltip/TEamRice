@@ -1,0 +1,1 @@
+/home_stajichlab/robb/bin/merge_bam_and_create_merged_sam_shell.pl
