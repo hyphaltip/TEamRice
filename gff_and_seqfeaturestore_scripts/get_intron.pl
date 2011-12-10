@@ -1,0 +1,1 @@
+/home_stajichlab/robb/bin/get_intron.pl
